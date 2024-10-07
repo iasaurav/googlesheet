@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Datalist from CSV</title>
+</head>
+<body>
+
+    <input type="search" id="security-input" list="securities" placeholder="Select a security...">
+    <datalist id="securities"></datalist>
+
+    <input type="number" id="price-input" placeholder="Price" step="0.01">
+    <input type="number" id="quantity-input" placeholder="Quantity" min="1">
+    <input type="text" id="transaction-input" placeholder="Transaction Type">
+    <input type="text" id="ordertype-input" placeholder="Order Type">
+    <input type="text" id="producttype-input" placeholder="Product Type">
+    
+    <button id="generate-output">Generate Output</button>
+
+    <textarea id="output" rows="10" cols="50" placeholder="Output will be displayed here..."></textarea>
+
+    <script>
+        const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRkrYqGmkizi-sB0wmkO6xiVzl1L6yZCLFQnpFnivZyEi7w8fgC7_-mQqjKrD0AxozCeZ5_BE3XqxKU/pub?gid=2094008481&single=true&range=A1:D&output=csv';
+
+        async function loadCSV() {
+            try {
+                const response = await fetch(csvUrl);
+                const csvText = await response.text();
+                const lines = csvText.split('\n');
+                const datalist = document.getElementById('securities');
+
+                // Skip header row and iterate through each line
+                for (let i = 1; i < lines.length; i++) {
+                    const row = lines[i].split(',');
+                    if (row.length >= 4) {
+                        const option = document.createElement('option');
+                        option.value = row[0] + " - " + row[1] + " - " + row[2]; // Assuming column A has security names
+                        option.dataset.row1 = row[1]; // Store value from column B
+                        option.dataset.row2 = row[2]; // Store value from column C
+                        datalist.appendChild(option);
+                    }
+                }
+            } catch (error) {
+                console.error('Error fetching CSV:', error);
+            }
+        }
+
+        function getValues() {
+            const securityInput = document.getElementById('security-input');
+            const selectedOption = Array.from(document.getElementById('securities').options)
+                .find(option => option.value === securityInput.value);
+            
+            if (selectedOption) {
+                const row1Value = selectedOption.dataset.row1; // Get value from row[1]
+                const row2Value = selectedOption.dataset.row2; // Get value from row[2]
+
+                // Get other input values
+                const price = document.getElementById('price-input').value;
+                const quantity = document.getElementById('quantity-input').value;
+                const transactionType = document.getElementById('transaction-input').value;
+                const orderType = document.getElementById('ordertype-input').value;
+                const productType = document.getElementById('producttype-input').value;
+
+                // Create output string
+                const output = `\nRow1: ${row1Value}\nRow2: ${row2Value}\nPrice: ${price}\nQuantity: ${quantity}\nTransaction Type: ${transactionType}\nOrder Type: ${orderType}\nProduct Type: ${productType}`;
+                
+                // Set output in textarea
+                document.getElementById('output').value = output;
+            } else {
+                alert('Please select a valid security.');
+            }
+        }
+
+        // Load the CSV data when the page is loaded
+        window.onload = loadCSV;
+
+        // Add event listener for the output button
+        document.getElementById('generate-output').addEventListener('click', getValues);
+    </script>
+
+</body>
+</html>
